@@ -8,6 +8,7 @@ Este projeto implementa um pipeline ETL (Extração, Transformação e Carregame
 db_current_steam_sales/
 ├── README.md           # Este arquivo
 ├── requirements.txt    # Dependências do projeto
+├── msedgedriver.exe    # Tela do navegador Edge para utilização do selenium
 ├── src/               # Código fonte
 │   ├── setup_bigquery.py    # Script para configuração inicial do BigQuery
 │   └── steam_sales_etl.py   # Pipeline ETL principal
@@ -19,8 +20,9 @@ db_current_steam_sales/
 ## Pré-requisitos
 
 - Python 3.8+
-- Conta no Google Cloud Platform
-- Credenciais do GCP com acesso ao BigQuery
+- Microsoft Edge WebDriver
+- Conta no Google Cloud Platform com BigQuery habilitado
+- Credenciais do Google Cloud configuradas
 
 ## Instalação
 
@@ -64,10 +66,23 @@ Os dados coletados e armazenados no BigQuery incluem:
 - Ends (Fim da promoção)
 - Starts (Início da promoção)
 
+## Dependências Principais
+
+- selenium: Web scraping
+- beautifulsoup4: Parsing HTML
+- google-cloud-bigquery: Integração com BigQuery
+- gspread: Integração com Google Sheets
+- pandas: Manipulação de dados
+
 ## Contribuição
 
-1. Faça o fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Envie para a branch (`git push origin feature/nova-feature`)
+1. Faça um Fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
+
+## Autores
+
+- Wendell Pereira Marques - Desenvolvimento inicial
+
