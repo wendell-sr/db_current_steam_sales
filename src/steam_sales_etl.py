@@ -46,16 +46,47 @@ class SteamSalesETL:
                 cells = game.find_all('td')
                 discount = cells[3].text.strip() if len(cells) > 3 else '0%'
                 price = cells[4].text.strip() if len(cells) > 4 else 'Free'
+                rating = cells[5].text.strip() if len(cells) > 5 else '0%'
+                release_date = cells[6].text.strip() if len(cells) > 6 else ''
+                
+                # Extract 'ends' and 'started' data
+                ends_cell = cells[7] if len(cells) > 7 else None
+                ends = ''
+                if ends_cell:
+                    if ends_cell.get('title'):
+                        ends = ends_cell.get('title').split('\n')[0]
+                    elif ends_cell.text.strip():
+                        ends = ends_cell.text.strip()
+                    
+                    if not ends and ends_cell.get('data-sort'):
+                        timestamp = int(ends_cell.get('data-sort'))
+                        ends = time.strftime('%d %B %Y at %H:%M:%S UTC', time.gmtime(timestamp))
+                
+                started_cell = cells[8] if len(cells) > 8 else None
+                started = ''
+                if started_cell:
+                    if started_cell.get('title'):
+                        started = started_cell.get('title').split('\n')[0]
+                    elif started_cell.text.strip():
+                        started = started_cell.text.strip()
+                    
+                    if not started and started_cell.get('data-sort'):
+                        timestamp = int(started_cell.get('data-sort'))
+                        started = time.strftime('%d %B %Y at %H:%M:%S UTC', time.gmtime(timestamp))
                 
                 games_data.append({
                     "App_ID": app_id,
                     "Image_URL": img_url,
                     "Name": name,
                     "Discount": discount,
-                    "Price": price
+                    "Price": price,
+                    "Rating": rating,
+                    "Release_Date": release_date,
+                    "Ends": ends,
+                    "Starts": started
                 })
             except Exception as e:
-                print(f"Erro ao processar jogo: {e}")
+                print(f"Erro ao processar jogo {app_id}: {e}")
         
         driver.quit()
         return pd.DataFrame(games_data)
@@ -66,7 +97,11 @@ class SteamSalesETL:
             bigquery.SchemaField("Image_URL", "STRING"),
             bigquery.SchemaField("Name", "STRING"),
             bigquery.SchemaField("Discount", "STRING"),
-            bigquery.SchemaField("Price", "STRING")
+            bigquery.SchemaField("Price", "STRING"),
+            bigquery.SchemaField("Rating", "STRING"),
+            bigquery.SchemaField("Release_Date", "STRING"),
+            bigquery.SchemaField("Ends", "STRING"),
+            bigquery.SchemaField("Starts", "STRING")
         ]
         
         job_config = bigquery.LoadJobConfig(
@@ -84,6 +119,10 @@ if __name__ == "__main__":
     DATASET_ID = "sales-steam.steam_sales"
     TABLE_ID = "sales-steam.steam_sales.sales"
 
+    etl = SteamSalesETL(CREDENTIALS_PATH)
+    df = etl.extract_data()
+    if not df.empty:
+        etl.load_to_bigquery(df, TABLE_ID)
     etl = SteamSalesETL(CREDENTIALS_PATH)
     df = etl.extract_data()
     if not df.empty:
