@@ -1,111 +1,90 @@
+from selenium import webdriver
+from selenium.webdriver.edge.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+from bs4 import BeautifulSoup
 import pandas as pd
 from google.cloud import bigquery
 from google.oauth2 import service_account
-import requests
-from bs4 import BeautifulSoup
 import time
-from datetime import datetime
 
 class SteamSalesETL:
     def __init__(self, credentials_path):
-        """
-        Inicializa o pipeline ETL com as credenciais do Google Cloud
-        
-        Args:
-            credentials_path (str): Caminho para o arquivo de credenciais JSON
-        """
         self.credentials = service_account.Credentials.from_service_account_file(
             credentials_path,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            scopes=[
+                'https://www.googleapis.com/auth/bigquery',
+            ]
         )
-        self.client = bigquery.Client(credentials=self.credentials)
+        self.bq_client = bigquery.Client(credentials=self.credentials)
+        self.driver_path = 'C:/Users/Wendell/Desktop/teste_engenheiro_dados/msedgedriver.exe'
+        self.service = Service(self.driver_path)
         
-    def extract_steam_data(self):
-        """
-        Extrai dados da página de promoções do Steam
+    def extract_data(self):
+        driver = webdriver.Edge(service=self.service)
+        driver.get("https://steamdb.info/sales/")
+        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "dt-length-0")))
         
-        Returns:
-            pandas.DataFrame: DataFrame com os dados extraídos
-        """
-        url = "https://steamdb.info/sales/"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        select_element = driver.find_element(By.ID, "dt-length-0")
+        select = Select(select_element)
+        select.select_by_value("-1")
         
-        # Adiciona delay para respeitar limites de rate
-        time.sleep(2)
+        WebDriverWait(driver, 15).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "timeago")))
+        time.sleep(5)
         
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
-            table = soup.find('table', {'id': 'DataTables_Table_0'})
-            
-            data = []
-            for row in table.find_all('tr')[1:]:  # Skip header row
-                cols = row.find_all('td')
-                if cols:
-                    game_data = {
-                        'name': cols[2].text.strip(),
-                        'discount': cols[3].text.strip(),
-                        'price': cols[4].text.strip(),
-                        'rating': cols[5].text.strip(),
-                        'ends_in': cols[6].text.strip(),
-                        'extracted_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    data.append(game_data)
-                    
-            return pd.DataFrame(data)
-            
-        except Exception as e:
-            print(f"Erro na extração: {str(e)}")
-            return pd.DataFrame()
-            
-    def load_to_bigquery(self, df, table_id):
-        """
-        Carrega os dados para o BigQuery
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        games = soup.find_all("tr", class_="app")
         
-        Args:
-            df (pandas.DataFrame): DataFrame com os dados
-            table_id (str): ID da tabela no formato 'projeto.dataset.tabela'
-        """
-        job_config = bigquery.LoadJobConfig(
-            write_disposition="WRITE_TRUNCATE",
-        )
+        games_data = []
+        for game in games:
+            try:
+                app_id = game.get('data-appid')
+                img_url = game.find('td', class_='applogo').find('img').get('src', '/static/img/applogo.svg')
+                name = game.find('a', class_='b').text.strip()
+                cells = game.find_all('td')
+                discount = cells[3].text.strip() if len(cells) > 3 else '0%'
+                price = cells[4].text.strip() if len(cells) > 4 else 'Free'
+                
+                games_data.append({
+                    "App_ID": app_id,
+                    "Image_URL": img_url,
+                    "Name": name,
+                    "Discount": discount,
+                    "Price": price
+                })
+            except Exception as e:
+                print(f"Erro ao processar jogo: {e}")
         
-        try:
-            job = self.client.load_table_from_dataframe(
-                df, table_id, job_config=job_config
-            )
-            job.result()  # Aguarda conclusão do job
-            
-            print(f"Carregados {len(df)} registros para {table_id}")
-            
-        except Exception as e:
-            print(f"Erro no carregamento para BigQuery: {str(e)}")
-            
-    def run_pipeline(self, table_id):
-        """
-        Executa o pipeline completo
-        
-        Args:
-            table_id (str): ID da tabela do BigQuery
-        """
-        print("Iniciando extração dos dados...")
-        df = self.extract_steam_data()
-        
-        if not df.empty:
-            print("Carregando dados para o BigQuery...")
-            self.load_to_bigquery(df, table_id)
-            print("Pipeline concluído com sucesso!")
-        else:
-            print("Não foram encontrados dados para processar.")
-
-# Exemplo de uso
-if __name__ == "__main__":
-    CREDENTIALS_PATH = "path/to/your/credentials.json"
-    TABLE_ID = "seu-projeto.seu_dataset.steam_sales"
+        driver.quit()
+        return pd.DataFrame(games_data)
     
+    def load_to_bigquery(self, df, table_id):
+        schema = [
+            bigquery.SchemaField("App_ID", "STRING"),
+            bigquery.SchemaField("Image_URL", "STRING"),
+            bigquery.SchemaField("Name", "STRING"),
+            bigquery.SchemaField("Discount", "STRING"),
+            bigquery.SchemaField("Price", "STRING")
+        ]
+        
+        job_config = bigquery.LoadJobConfig(
+            schema=schema,
+            write_disposition="WRITE_TRUNCATE"
+        )
+        
+        job = self.bq_client.load_table_from_dataframe(df, table_id, job_config=job_config)
+        job.result()
+        print(f"Carregados {len(df)} registros para {table_id}")
+
+if __name__ == "__main__":
+    CREDENTIALS_PATH = "config/credentials.json"
+    PROJECT_ID = "sales-steam"
+    DATASET_ID = "sales-steam.steam_sales"
+    TABLE_ID = "sales-steam.steam_sales.sales"
+
     etl = SteamSalesETL(CREDENTIALS_PATH)
-    etl.run_pipeline(TABLE_ID)
+    df = etl.extract_data()
+    if not df.empty:
+        etl.load_to_bigquery(df, TABLE_ID)
