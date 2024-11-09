@@ -5,7 +5,7 @@ Este projeto implementa um pipeline ETL (Extração, Transformação e Carregame
 ## Estrutura do Projeto
 
 ```
-steam-sales-etl/
+db_current_steam_sales/
 ├── README.md           # Este arquivo
 ├── requirements.txt    # Dependências do projeto
 ├── src/               # Código fonte
