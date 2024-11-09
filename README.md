@@ -1,6 +1,6 @@
-# Steam Sales ETL Pipeline
+# Pipeline ETL de Vendas da Steam
 
-Este projeto implementa um pipeline ETL (Extract, Transform, Load) para coletar dados de promoções da Steam e armazená-los no Google BigQuery.
+Este projeto implementa um pipeline ETL (Extração, Transformação e Carregamento) para coletar dados de promoções da Steam e armazená-los no Google BigQuery.
 
 ## Estrutura do Projeto
 
@@ -29,14 +29,12 @@ steam-sales-etl/
 git clone https://github.com/wendell-sr/db_current_steam_sales.git
 cd db_current_steam_sales
 ```
-
 2. Instale as dependências:
 ```bash
 pip install -r requirements.txt
 ```
-
 3. Configure as credenciais:
-- Coloque seu arquivo `credentials.json` do Google Cloud na pasta `config/`
+   - Coloque seu arquivo `credentials.json` do Google Cloud na pasta `config/`.
 
 ## Configuração
 
@@ -54,18 +52,22 @@ python src/steam_sales_etl.py
 
 ## Estrutura dos Dados
 
-Os dados coletados incluem:
-- Nome do jogo
-- Desconto
-- Preço
-- Avaliação
-- Tempo restante da promoção
-- Data/hora da extração
+Os dados coletados e armazenados no BigQuery incluem:
+
+- App_ID (ID do aplicativo)
+- Image_URL (URL da imagem do jogo)
+- Name (Nome do jogo)
+- Discount (Desconto)
+- Price (Preço)
+- Rating (Avaliação)
+- Release_Date (Data de lançamento)
+- Ends (Fim da promoção)
+- Starts (Início da promoção)
 
 ## Contribuição
 
 1. Faça o fork do projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
 3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
+4. Envie para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
