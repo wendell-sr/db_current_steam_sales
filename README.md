@@ -8,7 +8,7 @@ Este projeto implementa um pipeline ETL (Extração, Transformação e Carregame
 db_current_steam_sales/
 ├── README.md           # Este arquivo
 ├── requirements.txt    # Dependências do projeto
-├── msedgedriver.exe    # Tela do navegador Edge para utilização do selenium
+├── msedgedriver.exe    # Driver do navegador Microsoft Edge para utilização com o Selenium
 ├── src/               # Código fonte
 │   ├── setup_bigquery.py    # Script para configuração inicial do BigQuery
 │   └── steam_sales_etl.py   # Pipeline ETL principal
