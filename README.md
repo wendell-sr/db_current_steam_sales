@@ -26,8 +26,8 @@ steam-sales-etl/
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/steam-sales-etl.git
-cd steam-sales-etl
+git clone https://github.com/wendell-sr/db_current_steam_sales.git
+cd db_current_steam_sales
 ```
 
 2. Instale as dependências:
