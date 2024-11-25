@@ -71,7 +71,6 @@ Os dados coletados e armazenados no BigQuery incluem:
 - selenium: Web scraping
 - beautifulsoup4: Parsing HTML
 - google-cloud-bigquery: Integração com BigQuery
-- gspread: Integração com Google Sheets
 - pandas: Manipulação de dados
 
 ## Contribuição
